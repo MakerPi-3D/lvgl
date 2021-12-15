@@ -35,24 +35,25 @@ extern "C" {
 /*********************
  *      DEFINES
  *********************/
-#define LV_COLOR_WHITE   LV_COLOR_MAKE(0xFF, 0xFF, 0xFF)
-#define LV_COLOR_SILVER  LV_COLOR_MAKE(0xC0, 0xC0, 0xC0)
-#define LV_COLOR_GRAY    LV_COLOR_MAKE(0x80, 0x80, 0x80)
-#define LV_COLOR_BLACK   LV_COLOR_MAKE(0x00, 0x00, 0x00)
-#define LV_COLOR_RED     LV_COLOR_MAKE(0xFF, 0x00, 0x00)
-#define LV_COLOR_MAROON  LV_COLOR_MAKE(0x80, 0x00, 0x00)
-#define LV_COLOR_YELLOW  LV_COLOR_MAKE(0xFF, 0xFF, 0x00)
-#define LV_COLOR_OLIVE   LV_COLOR_MAKE(0x80, 0x80, 0x00)
-#define LV_COLOR_LIME    LV_COLOR_MAKE(0x00, 0xFF, 0x00)
-#define LV_COLOR_GREEN   LV_COLOR_MAKE(0x00, 0x80, 0x00)
-#define LV_COLOR_CYAN    LV_COLOR_MAKE(0x00, 0xFF, 0xFF)
+/* Fix by rnnslv: LV_COLOR_MAKE is undefined because of error C4576 - Use lv_color_make instead */
+#define LV_COLOR_WHITE   lv_color_make(0xFF, 0xFF, 0xFF)
+#define LV_COLOR_SILVER  lv_color_make(0xC0, 0xC0, 0xC0)
+#define LV_COLOR_GRAY    lv_color_make(0x80, 0x80, 0x80)
+#define LV_COLOR_BLACK   lv_color_make(0x00, 0x00, 0x00)
+#define LV_COLOR_RED     lv_color_make(0xFF, 0x00, 0x00)
+#define LV_COLOR_MAROON  lv_color_make(0x80, 0x00, 0x00)
+#define LV_COLOR_YELLOW  lv_color_make(0xFF, 0xFF, 0x00)
+#define LV_COLOR_OLIVE   lv_color_make(0x80, 0x80, 0x00)
+#define LV_COLOR_LIME    lv_color_make(0x00, 0xFF, 0x00)
+#define LV_COLOR_GREEN   lv_color_make(0x00, 0x80, 0x00)
+#define LV_COLOR_CYAN    lv_color_make(0x00, 0xFF, 0xFF)
 #define LV_COLOR_AQUA    LV_COLOR_CYAN
-#define LV_COLOR_TEAL    LV_COLOR_MAKE(0x00, 0x80, 0x80)
-#define LV_COLOR_BLUE    LV_COLOR_MAKE(0x00, 0x00, 0xFF)
-#define LV_COLOR_NAVY    LV_COLOR_MAKE(0x00, 0x00, 0x80)
-#define LV_COLOR_MAGENTA LV_COLOR_MAKE(0xFF, 0x00, 0xFF)
-#define LV_COLOR_PURPLE  LV_COLOR_MAKE(0x80, 0x00, 0x80)
-#define LV_COLOR_ORANGE  LV_COLOR_MAKE(0xFF, 0xA5, 0x00)
+#define LV_COLOR_TEAL    lv_color_make(0x00, 0x80, 0x80)
+#define LV_COLOR_BLUE    lv_color_make(0x00, 0x00, 0xFF)
+#define LV_COLOR_NAVY    lv_color_make(0x00, 0x00, 0x80)
+#define LV_COLOR_MAGENTA lv_color_make(0xFF, 0x00, 0xFF)
+#define LV_COLOR_PURPLE  lv_color_make(0x80, 0x00, 0x80)
+#define LV_COLOR_ORANGE  lv_color_make(0xFF, 0xA5, 0x00)
 
 /**
  * Opacity percentages.
@@ -216,7 +217,7 @@ enum {
 #define LV_COLOR_GET_A(c) LV_CONCAT(LV_COLOR_GET_A, LV_COLOR_DEPTH)(c)
 
 #define _LV_COLOR_ZERO_INITIALIZER LV_CONCAT(_LV_COLOR_ZERO_INITIALIZER, LV_COLOR_DEPTH)
-#define LV_COLOR_MAKE(r8, g8, b8) LV_CONCAT(LV_COLOR_MAKE, LV_COLOR_DEPTH)(r8, g8, b8)
+//#define LV_COLOR_MAKE(r8, g8, b8) LV_CONCAT(LV_COLOR_MAKE, LV_COLOR_DEPTH)(r8, g8, b8)
 
 /**********************
  *      TYPEDEFS
@@ -582,7 +583,33 @@ static inline uint8_t lv_color_brightness(lv_color_t color)
 
 static inline lv_color_t lv_color_make(uint8_t r, uint8_t g, uint8_t b)
 {
-    return LV_COLOR_MAKE(r, g, b);
+//    return LV_COLOR_MAKE(r, g, b);
+/* Fix by rnnslv: LV_COLOR_MAKE is undefined because of error C4576 */
+    lv_color_t out;
+#if LV_COLOR_DEPTH == 1
+    out.full = (b >> 7 | g >> 7 | r >> 7);
+#elif LV_COLOR_DEPTH == 8
+    out.ch.blue = b >> 6;
+    out.ch.green = g >> 5;
+    out.ch.red = r >> 5;
+#elif LV_COLOR_DEPTH == 16
+#if LV_COLOR_16_SWAP == 0
+    out.ch.blue = b >> 3;
+    out.ch.green = g >> 2;
+    out.ch.red = r >> 3;
+#else
+    out.ch.green_h = g >> 5;
+    out.ch.red = r >> 3;
+    out.ch.blue = b >> 3;
+    out.ch.green_l = (g >> 2) & 0x7;
+#endif
+#elif LV_COLOR_DEPTH == 32
+    out.ch.blue = b;
+    out.ch.green = g;
+    out.ch.red = r;
+    out.ch.alpha = 0xff;        /*Fix 0xff alpha*/
+#endif
+    return out;
 }
 
 static inline lv_color_t lv_color_hex(uint32_t c)
